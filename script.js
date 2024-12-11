@@ -1,72 +1,71 @@
-const uploadField = document.getElementById('upload');
-const processButton = document.getElementById('process');
-const filterButton = document.getElementById('filter');
-const totalStickersElement = document.getElementById('total-stickers');
-const startStickerInput = document.getElementById('start-sticker');
-const endStickerInput = document.getElementById('end-sticker');
-const totalServicesElement = document.getElementById('total-services');
-const totalNatashaElement = document.getElementById('total-natasha');
-const tableBody = document.querySelector("#result-table tbody");
-
-let selectedFile = null;
-let allWeights = [];
-
-// Обработка выбора файла
-uploadField.addEventListener('change', (event) => {
-    selectedFile = event.target.files[0];
-    if (selectedFile) {
-        processButton.disabled = false; // Активируем кнопку обработки
-    } else {
-        processButton.disabled = true; // Отключаем кнопку обработки
-    }
-});
-
-// Функция расчёта стоимости услуг
-function calculateServiceCost(weight) {
-    if (weight <= 0.25) return 0;
-    if (weight <= 0.5) return 150;
-    if (weight <= 1) return 200;
-    if (weight <= 2) return 250;
-    return 0;
-}
-
-// Функция расчёта стоимости Наташи
-function calculateNatashaCost(weight) {
-    if (weight <= 0.25) return 0;
-    if (weight <= 0.5) return 50;
-    if (weight <= 1) return 100;
-    if (weight <= 2) return 200;
-    return 0;
-}
-
-// Функция отображения таблицы
-function displayTable(weights) {
+// Обновим функцию отображения таблицы
+function displayTable(weights, startSticker = 1) {
     tableBody.innerHTML = '';
     let totalServiceCost = 0;
     let totalNatashaCost = 0;
+    let skamCount = 0;
 
-    weights.forEach(weightStr => {
-        const weight = parseFloat(weightStr);
+    weights.forEach((weightStr, index) => {
+        const weight = parseFloat(weightStr); // Преобразуем строку в число
         const serviceCost = calculateServiceCost(weight);
         const natashaCost = calculateNatashaCost(weight);
 
         totalServiceCost += serviceCost;
         totalNatashaCost += natashaCost;
 
+        // Логика определения "skam"
+        let skamStatus = '';
+        if (
+            (weight > 0.25 && weight <= 0.3) || // 250 г с 50-граммовым разбросом
+            (weight > 0.5 && weight <= 0.55) || // 500 г с 50-граммовым разбросом
+            (weight > 1 && weight <= 1.05)     // 1 кг с 50-граммовым разбросом
+        ) {
+            skamStatus = '✔️'; // Skam
+            skamCount++;
+        } else {
+            skamStatus = '❌'; // Не Skam
+        }
+
+        // Создаём строку таблицы
         const row = document.createElement("tr");
         row.innerHTML = `
+            <td>${startSticker + index}</td>
             <td>${weight.toFixed(3)} kg</td>
             <td>${serviceCost} UAH</td>
             <td>${natashaCost} UAH</td>
+            <td>${skamStatus}</td>
         `;
         tableBody.appendChild(row);
     });
 
+    // Обновляем общие суммы
     totalServicesElement.textContent = totalServiceCost;
     totalNatashaElement.textContent = totalNatashaCost;
+
+    // Добавляем информацию о количестве Skam
+    const skamTotalRow = document.createElement("tr");
+    skamTotalRow.innerHTML = `
+        <td colspan="4" class="fw-bold text-end">Total Skam:</td>
+        <td>${skamCount}</td>
+    `;
+    tableBody.appendChild(skamTotalRow);
 }
 
-// Обработка кнопки "Start Processing"
+// Обновим обработчик кнопки "Filter"
+filterButton.addEventListener('click', () => {
+    const start = parseInt(startStickerInput.value, 10) || 1;
+    const end = parseInt(endStickerInput.value, 10) || allWeights.length;
+
+    if (start < 1 || end > allWeights.length || start > end) {
+        alert('Введите корректный диапазон!');
+        return;
+    }
+
+    const filteredWeights = allWeights.slice(start - 1, end);
+    displayTable(filteredWeights, start);
+});
+
+// Обновим обработчик кнопки "Start Processing"
 processButton.addEventListener('click', async () => {
     if (!selectedFile) {
         alert('Выберите файл!');
@@ -99,18 +98,4 @@ processButton.addEventListener('click', async () => {
     };
 
     reader.readAsArrayBuffer(selectedFile);
-});
-
-// Обработка кнопки "Filter"
-filterButton.addEventListener('click', () => {
-    const start = parseInt(startStickerInput.value, 10) || 1;
-    const end = parseInt(endStickerInput.value, 10) || allWeights.length;
-
-    if (start < 1 || end > allWeights.length || start > end) {
-        alert('Введите корректный диапазон!');
-        return;
-    }
-
-    const filteredWeights = allWeights.slice(start - 1, end);
-    displayTable(filteredWeights);
 });
