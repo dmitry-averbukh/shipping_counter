@@ -1,120 +1,59 @@
-const uploadField = document.getElementById('upload');
-const processButton = document.getElementById('process');
-const filterButton = document.getElementById('filter');
-const totalStickersElement = document.getElementById('total-stickers');
-const startStickerInput = document.getElementById('start-sticker');
-const endStickerInput = document.getElementById('end-sticker');
-const totalServicesElement = document.getElementById('total-services');
-const totalNatashaElement = document.getElementById('total-natasha');
-const tableBody = document.querySelector("#result-table tbody");
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Filter Weights from PDF</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@2.14.305/build/pdf.js"></script>
+</head>
+<body class="bg-light">
+<div class="container py-5">
+    <h1 class="text-center mb-4">Filter Weights from PDF</h1>
 
-let selectedFile = null;
-let allWeights = [];
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <input type="file" id="upload" accept=".pdf" class="form-control" />
+        </div>
+        <div class="col-md-6">
+            <button id="process" class="btn btn-primary w-100" disabled>Start Processing</button>
+        </div>
+    </div>
 
-// Обработка выбора файла
-uploadField.addEventListener('change', (event) => {
-    selectedFile = event.target.files[0];
-    if (selectedFile) {
-        processButton.disabled = false; // Активируем кнопку обработки
-    } else {
-        processButton.disabled = true; // Отключаем кнопку обработки
-    }
-});
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <p class="fw-bold">Total Stickers: <span id="total-stickers">0</span></p>
+        </div>
+        <div class="col-md-3">
+            <label for="start-sticker" class="form-label">From Sticker:</label>
+            <input type="number" id="start-sticker" min="1" placeholder="1" class="form-control" />
+        </div>
+        <div class="col-md-3">
+            <label for="end-sticker" class="form-label">To Sticker:</label>
+            <input type="number" id="end-sticker" min="1" placeholder="All" class="form-control" />
+        </div>
+        <div class="col-md-3 d-flex align-items-end">
+            <button id="filter" class="btn btn-success w-100" disabled>Filter</button>
+        </div>
+    </div>
 
-// Функция расчёта стоимости услуг
-function calculateServiceCost(weight) {
-    if (weight <= 0.25) return 0;
-    if (weight <= 0.5) return 150;
-    if (weight <= 1) return 200;
-    if (weight <= 2) return 250;
-    return 0;
-}
+    <h2 class="mb-3">Result Table:</h2>
+    <table id="result-table" class="table table-striped table-bordered">
+        <thead class="table-dark">
+        <tr>
+            <th>Weight (kg)</th>
+            <th>Service Cost (UAH)</th>
+            <th>Natasha's Cost (UAH)</th>
+        </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
 
-// Функция расчёта стоимости Наташи
-function calculateNatashaCost(weight) {
-    if (weight <= 0.25) return 0;
-    if (weight <= 0.5) return 50;
-    if (weight <= 1) return 100;
-    if (weight <= 2) return 200;
-    return 0;
-}
-
-// Функция отображения таблицы
-function displayTable(weights) {
-    tableBody.innerHTML = '';
-    let totalServiceCost = 0;
-    let totalNatashaCost = 0;
-
-    weights.forEach(weightStr => {
-        const weight = parseFloat(weightStr);
-        const serviceCost = calculateServiceCost(weight);
-        const natashaCost = calculateNatashaCost(weight);
-
-        totalServiceCost += serviceCost;
-        totalNatashaCost += natashaCost;
-
-        const row = document.createElement("tr");
-        row.innerHTML = `
-            <td>${weight.toFixed(3)} kg</td>
-            <td>${serviceCost} UAH</td>
-            <td>${natashaCost} UAH</td>
-        `;
-        tableBody.appendChild(row);
-    });
-
-    totalServicesElement.textContent = totalServiceCost;
-    totalNatashaElement.textContent = totalNatashaCost;
-}
-
-// Обработка кнопки "Start Processing"
-processButton.addEventListener('click', async () => {
-    if (!selectedFile) {
-        alert('Выберите файл!');
-        return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = async function () {
-        const typedArray = new Uint8Array(this.result);
-        const pdf = await pdfjsLib.getDocument(typedArray).promise;
-
-        allWeights = [];
-        const weightRegex = /(\d+\.\d+)\s*kg/;
-
-        for (let i = 1; i <= pdf.numPages; i++) {
-            const page = await pdf.getPage(i);
-            const textContent = await page.getTextContent();
-            const text = textContent.items.map(item => item.str).join("\n");
-
-            text.split("\n").forEach(line => {
-                const match = line.match(weightRegex);
-                if (match) {
-                    allWeights.push(match[0]);
-                }
-            });
-        }
-
-        // Удаляем дублирующиеся веса
-        allWeights = [...new Set(allWeights)];
-
-        totalStickersElement.textContent = allWeights.length;
-        filterButton.disabled = false;
-        displayTable(allWeights);
-    };
-
-    reader.readAsArrayBuffer(selectedFile);
-});
-
-// Обработка кнопки "Filter"
-filterButton.addEventListener('click', () => {
-    const start = parseInt(startStickerInput.value, 10) || 1;
-    const end = parseInt(endStickerInput.value, 10) || allWeights.length;
-
-    if (start < 1 || end > allWeights.length || start > end) {
-        alert('Введите корректный диапазон!');
-        return;
-    }
-
-    const filteredWeights = allWeights.slice(start - 1, end);
-    displayTable(filteredWeights);
-});
+    <div class="mt-4 text-end">
+        <p class="fw-bold">Total for Services: <span id="total-services">0</span> UAH</p>
+        <p class="fw-bold">Total for Natasha: <span id="total-natasha">0</span> UAH</p>
+    </div>
+</div>
+<script src="script.js"></script>
+</body>
+</html>
