@@ -34,7 +34,7 @@ function calculateNatashaCost(weight) {
     if (weight <= 0.25) baseCost = 0;
     else if (weight <= 0.5) baseCost = 50;
     else if (weight <= 1) baseCost = 100;
-    else if (weight <= 2) baseCost = 200;
+    else if (weight <= 2) baseCost = 150;
 
     // Логика "скама" — минус 50 гривен
     if (
