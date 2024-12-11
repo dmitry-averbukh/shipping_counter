@@ -94,6 +94,9 @@ processButton.addEventListener('click', async () => {
             });
         }
 
+        // Удаляем дублирующиеся веса
+        allWeights = [...new Set(allWeights)];
+
         totalStickersElement.textContent = allWeights.length;
         filterButton.disabled = false;
         displayTable(allWeights);
