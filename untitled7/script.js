@@ -23,7 +23,7 @@ uploadField.addEventListener('change', (event) => {
 
 // Функция расчёта стоимости услуг
 function calculateServiceCost(weight) {
-    if (weight <= 0.25) return 0;
+    if (weight <= 0.25) return 20;
     if (weight <= 0.5) return 150;
     if (weight <= 1) return 200;
     if (weight <= 2) return 250;
